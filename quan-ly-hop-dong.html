@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý thuê phòng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container py-4">
+  <h1 class="h4 mb-3">Quản lý thuê phòng</h1>
+
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="contract-tab" data-bs-toggle="tab" data-bs-target="#contract" type="button" role="tab">Danh sách hợp đồng</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="room-tab" data-bs-toggle="tab" data-bs-target="#room" type="button" role="tab">Danh sách phòng thuê</button>
+    </li>
+  </ul>
+
+  <div class="tab-content bg-white border border-top-0 rounded-bottom p-3">
+    <!-- Tab hợp đồng -->
+    <div class="tab-pane fade show active" id="contract" role="tabpanel" tabindex="0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">Danh sách hợp đồng</h2>
+        <button type="button" class="btn btn-primary" id="btnCreate">+ Tạo hợp đồng</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Mã hợp đồng</th><th>Mã phòng</th><th>Tên người thuê</th>
+              <th>Ngày làm hợp đồng</th><th>Thời gian thuê</th>
+              <th class="text-end">Tổng tiền</th><th class="text-center">Options</th>
+            </tr>
+          </thead>
+          <tbody id="contractBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab phòng -->
+    <div class="tab-pane fade" id="room" role="tabpanel" tabindex="0">
+      <h2 class="h5 mb-3">Danh sách phòng thuê</h2>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Mã phòng</th><th>Tên phòng</th><th>Diện tích</th>
+              <th class="text-end">Giá thuê / tháng</th><th>Tình trạng thuê</th>
+            </tr>
+          </thead>
+          <tbody id="roomBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal tạo hợp đồng -->
+<div class="modal fade" id="contractModal" tabindex="-1" aria-labelledby="contractModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content needs-validation" id="contractForm" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="contractModalLabel">Tạo hợp đồng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="contractId" class="form-label">Mã hợp đồng</label>
+          <input type="text" class="form-control" id="contractId" placeholder="HD-0001" maxlength="7" required>
+          <div class="invalid-feedback" id="contractIdError">Mã hợp đồng phải có dạng HD-XXXX (X là số).</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="roomId" class="form-label">Mã phòng</label>
+          <select class="form-select" id="roomId" required></select>
+          <div class="invalid-feedback">Vui lòng chọn phòng.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="tenantName" class="form-label">Tên người thuê</label>
+          <input type="text" class="form-control" id="tenantName" required>
+          <div class="invalid-feedback">Vui lòng nhập tên người thuê.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="tenantIdCard" class="form-label">Số chứng minh nhân dân</label>
+          <input type="text" class="form-control" id="tenantIdCard" inputmode="numeric" pattern="[0-9]{9}|[0-9]{12}" required>
+          <div class="invalid-feedback">Vui lòng nhập số CMND/CCCD (9 hoặc 12 chữ số).</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="contractDate" class="form-label">Ngày làm hợp đồng</label>
+          <input type="text" class="form-control" id="contractDate" readonly>
+          <div class="form-text">Mặc định là ngày hiện tại (dd/MM/yyyy), không thể sửa.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="duration" class="form-label">Thời gian thuê</label>
+          <select class="form-select" id="duration" required>
+            <option value="">-- Chọn thời gian thuê --</option>
+            <option value="3">3 tháng</option>
+            <option value="6">6 tháng</option>
+            <option value="12">12 tháng</option>
+          </select>
+          <div class="invalid-feedback">Vui lòng chọn thời gian thuê.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+        <button type="submit" class="btn btn-primary">Lưu hợp đồng</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const FREE = 'Chưa được thuê', RENTED = 'Đã được thuê';
+
+  // Dữ liệu mẫu, thay bằng dữ liệu lấy từ database (API) của bạn
+  const rooms = [
+    { id: 'P101', name: 'Phòng 101', area: 20, price: 3000000, status: RENTED },
+    { id: 'P102', name: 'Phòng 102', area: 25, price: 3500000, status: FREE },
+    { id: 'P203', name: 'Phòng 203', area: 30, price: 3500000, status: RENTED },
+    { id: 'P204', name: 'Phòng 204', area: 22, price: 3200000, status: FREE },
+    { id: 'P305', name: 'Phòng 305', area: 28, price: 3500000, status: RENTED }
+  ];
+  const contracts = [
+    { id: 'HD-0001', roomId: 'P101', tenant: 'Nguyễn Văn An',  idCard: '012345678901', date: '01/09/2026', months: 6 },
+    { id: 'HD-0002', roomId: 'P203', tenant: 'Trần Thị Bình',  idCard: '098765432109', date: '15/09/2026', months: 12 },
+    { id: 'HD-0003', roomId: 'P305', tenant: 'Lê Hoàng Cường', idCard: '024681357911', date: '20/09/2026', months: 3 }
+  ];
+
+  const money = n => n.toLocaleString('vi-VN') + ' đ';
+  const $ = id => document.getElementById(id);
+  const modal = new bootstrap.Modal($('contractModal'));
+
+  function todayStr() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
+
+  function render() {
+    $('contractBody').innerHTML = contracts.map(c => {
+      const room = rooms.find(r => r.id === c.roomId);
+      return `<tr>
+        <td>${c.id}</td><td>${c.roomId}</td><td>${c.tenant}</td>
+        <td>${c.date}</td><td>${c.months} tháng</td>
+        <td class="text-end">${money(room.price * c.months)}</td>
+        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" data-del="${c.id}">Xoá</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="text-center text-muted">Chưa có hợp đồng nào.</td></tr>';
+
+    $('roomBody').innerHTML = rooms.map(r => `<tr>
+      <td>${r.id}</td><td>${r.name}</td><td>${r.area} m²</td>
+      <td class="text-end">${money(r.price)}</td>
+      <td><span class="badge text-bg-${r.status === FREE ? 'success' : 'danger'}">${r.status}</span></td>
+    </tr>`).join('');
+  }
+
+  // Chỉ đưa các phòng chưa được thuê vào dropdown
+  function fillRoomOptions() {
+    const free = rooms.filter(r => r.status === FREE);
+    $('roomId').innerHTML = free.length
+      ? '<option value="">-- Chọn phòng --</option>' +
+        free.map(r => `<option value="${r.id}">${r.id} - ${r.name} (${money(r.price)}/tháng)</option>`).join('')
+      : '<option value="">Không còn phòng trống</option>';
+  }
+
+  $('btnCreate').addEventListener('click', () => {
+    $('contractForm').reset();
+    $('contractForm').classList.remove('was-validated');
+    $('contractId').setCustomValidity('');
+    $('contractDate').value = todayStr();
+    fillRoomOptions();
+    modal.show();
+  });
+
+  // Chỉ cho nhập số ở ô CMND
+  $('tenantIdCard').addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, ''));
+
+  $('contractForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const idInput = $('contractId');
+    const id = idInput.value.trim().toUpperCase();
+
+    // Kiểm tra định dạng HD-XXXX và trùng mã
+    if (!/^HD-\d{4}$/.test(id)) {
+      $('contractIdError').textContent = 'Mã hợp đồng phải có dạng HD-XXXX (X là số).';
+      idInput.setCustomValidity('invalid');
+    } else if (contracts.some(c => c.id === id)) {
+      $('contractIdError').textContent = 'Mã hợp đồng đã tồn tại.';
+      idInput.setCustomValidity('invalid');
+    } else {
+      idInput.setCustomValidity('');
+    }
+
+    // Ngày hợp đồng luôn là ngày hiện tại
+    $('contractDate').value = todayStr();
+
+    e.target.classList.add('was-validated');
+    if (!e.target.checkValidity()) return;
+
+    contracts.push({
+      id,
+      roomId: $('roomId').value,
+      tenant: $('tenantName').value.trim(),
+      idCard: $('tenantIdCard').value,
+      date: $('contractDate').value,
+      months: Number($('duration').value)
+    });
+
+    // Cập nhật tình trạng thuê: Chưa được thuê -> Đã được thuê
+    rooms.find(r => r.id === $('roomId').value).status = RENTED;
+
+    render();
+    modal.hide();
+  });
+
+  // Xoá hợp đồng: trả phòng về "Chưa được thuê"
+  $('contractBody').addEventListener('click', e => {
+    const id = e.target.dataset.del;
+    if (!id || !confirm(`Xoá hợp đồng ${id}?`)) return;
+    const i = contracts.findIndex(c => c.id === id);
+    rooms.find(r => r.id === contracts[i].roomId).status = FREE;
+    contracts.splice(i, 1);
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
